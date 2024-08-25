@@ -13,7 +13,7 @@ app = FastAPI()
 
 class FishMedakaAI:
     def __init__(self):
-        self.detector_model_path = 'yolov8_best_medaka_detector.pt'
+        self.detector_model_path = 'yolov8_best_medaka_detector_v2.pt'
         self.class_names = ['O.celebensis', 'O.javanicus']  # Replace with actual class names
 
     def detect_medaka(self, image: np.ndarray):
