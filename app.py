@@ -25,21 +25,30 @@ class FishMedakaAI:
         
         detection_data = {
             'image_base64': '',
+            'image_processed_base64_list': [],  # List to store multiple cropped images
             'classes': [],
             'confidence_scores': []
         }
 
+        # Convert BGR image to RGB for processing
+        original_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        cropped_images = []
+
         for result in results:
-            # Extract classes and confidence scores from result
+            # Extract classes, confidence scores, and crop images from result
             for box in result.boxes.data.cpu().numpy():
                 x1, y1, x2, y2, confidence, class_id = box
-                
-                # Convert class ID to class name
                 class_name = self.class_names[int(class_id)]
+                
                 detection_data['classes'].append(class_name)
                 detection_data['confidence_scores'].append(float(confidence))
-            
-            # Plot the results image
+                
+                # Crop the detected object
+                cropped_img = original_image[int(y1):int(y2), int(x1):int(x2)]
+                cropped_images.append((cropped_img, class_name, confidence))
+
+            # Plot the results image with bounding boxes
             im_bgr = result.plot()  # BGR-order numpy array
             
             # Convert BGR to RGB format
@@ -51,6 +60,16 @@ class FishMedakaAI:
             pil_image.save(buffered, format="JPEG")
             encoded_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
             detection_data['image_base64'] = encoded_image
+
+        # Convert each cropped image to base64 format and store in list
+        for crop, class_name, confidence in cropped_images:
+            if crop.size != 0:
+                # Convert cropped image to PIL format
+                pil_crop_image = Image.fromarray(crop)
+                buffered = io.BytesIO()
+                pil_crop_image.save(buffered, format="JPEG")
+                encoded_crop_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+                detection_data['image_processed_base64_list'].append(encoded_crop_image)
 
         # Return the detection data
         return detection_data
